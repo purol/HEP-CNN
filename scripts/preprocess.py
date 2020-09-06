@@ -97,7 +97,7 @@ class FileSplitOut:
         #self.nOutEvent += nSrcEvent;
         begin = 0
         while begin < nSrcEvent:
-            end = begin+min(self.maxEvent, nSrcEvent)
+            end = begin+min(nSrcEvent, self.maxEvent-len(self.weights))
             self.nOutEvent += (end-begin)
             print("%d/%d" % (self.nOutEvent, self.nEventTotal), end='\r')
 
