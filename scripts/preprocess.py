@@ -94,10 +94,9 @@ class FileSplitOut:
     def addEvents(self, src_labels, src_weights, src_images_h, src_images_e, src_images_t):
 
         nSrcEvent = len(src_weights)
-        #self.nOutEvent += nSrcEvent;
         begin = 0
         while begin < nSrcEvent:
-            end = begin+min(nSrcEvent, self.maxEvent-len(self.weights))
+            end = min(nSrcEvent, begin+self.maxEvent-len(self.weights))
             self.nOutEvent += (end-begin)
             print("%d/%d" % (self.nOutEvent, self.nEventTotal), end='\r')
 
