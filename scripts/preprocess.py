@@ -25,12 +25,6 @@ srcFileNames = [x for x in args.input if x.endswith('.h5')]
 if not args.output.endswith('.h5'): outPrefix, outSuffix = args.output+'/data', '.h5'
 else: outPrefix, outSuffix = args.output.rsplit('.', 1)
 args.nevent = max(args.nevent, -1) ## nevent should be -1 to process everything or give specific value
-precision = 'f%d' % (args.precision//8)
-kwargs = {'dtype':precision}
-if args.compress == 'gzip':
-    kwargs.update({'compression':'gzip', 'compression_opts':9})
-elif args.compress == 'lzf':
-    kwargs.update({'compression':'lzf'})
 
 ## Logic for the arguments regarding on splitting
 ##   split off: we will simply ignore nfiles parameter => reset nfiles=1
@@ -63,14 +57,93 @@ if args.nfiles > 0:
 else:
     args.nfiles = int(ceil(nEventTotal/args.nevent))
     nEventOutFile = min(nEventTotal, args.nevent)
+
+shape = h5py.File(srcFileName, 'r')['all_events/hist'].shape[1:]
+shape = [3,*shape] if args.format == 'NCHW' else [*shape,3]
+
 print("@@@ Total %d events to process, store into %d files (%d events per file)" % (nEventTotal, args.nfiles, nEventOutFile))
 
+class FileSplitOut:
+    def __init__(self, shape, maxEvent, fNamePrefix, args, nEventTotal, debug=False):
+        self.shape = shape
+        self.maxEvent = maxEvent
+        self.fNamePrefix = fNamePrefix
+        self.chunkSize = args.chunk
+        self.nEventTotal = nEventTotal
+        self.debug = debug
+        self.chAxis = -1 if args.format == 'NHWC' else 1
+
+        precision = 'f%d' % (args.precision//8)
+        self.kwargs = {'dtype':precision}
+        if args.compress == 'gzip':
+            self.kwargs.update({'compression':'gzip', 'compression_opts':9})
+        elif args.compress == 'lzf':
+            self.kwargs.update({'compression':'lzf'})
+
+        self.nOutFile = 0
+        self.nOutEvent = 0
+
+        self.initOutput()
+
+    def initOutput(self):
+        ## Build placeholder for the output
+        self.labels = np.ones(0)
+        self.weights = np.ones(0)
+        self.images = np.ones([0,*self.shape])
+
+    def addEvents(self, src_labels, src_weights, src_images_h, src_images_e, src_images_t):
+
+        nSrcEvent = len(src_weights)
+        #self.nOutEvent += nSrcEvent;
+        begin = 0
+        while begin < nSrcEvent:
+            end = begin+min(self.maxEvent, nSrcEvent)
+            self.nOutEvent += (end-begin)
+            print("%d/%d" % (self.nOutEvent, self.nEventTotal), end='\r')
+
+            images_h = np.expand_dims(src_images_h[begin:end,:,:], self.chAxis)
+            images_e = np.expand_dims(src_images_e[begin:end,:,:], self.chAxis)
+            images_t = np.expand_dims(src_images_t[begin:end,:,:], self.chAxis)
+            images = np.concatenate([images_h, images_e, images_t], axis=self.chAxis)
+
+            self.labels  = np.concatenate([self.labels , src_labels[begin:end]])
+            self.weights = np.concatenate([self.weights, src_weights[begin:end]])
+            self.images  = np.concatenate([self.images , images])
+
+            if len(self.weights) == self.maxEvent: self.flush()
+            begin = end
+
+    def flush(self):
+        self.save()
+        self.initOutput()
+
+    def save(self):
+        fName = "%s_%d.h5" % (self.fNamePrefix, self.nOutFile)
+        nEventToSave = len(self.weights)
+        if nEventToSave == 0: return
+        if self.debug: print("Writing output file %s..." % fName, end='')
+
+        chunkSize = min(self.chunkSize, nEventToSave)
+        with h5py.File(fName, 'w', libver='latest', swmr=True) as outFile:
+            g = outFile.create_group('all_events')
+            g.create_dataset('labels' , data=self.labels , chunks=(chunkSize,), dtype='f4')
+            g.create_dataset('weights', data=self.weights, chunks=(chunkSize,), dtype='f4')
+            g.create_dataset('images' , data=self.images , chunks=((chunkSize,)+self.images.shape[1:]), **self.kwargs)
+            if self.debug: print("  done")
+
+        self.nOutFile += 1
+
+        if self.debug:
+            with h5py.File(fName, 'r', libver='latest', swmr=True) as outFile:
+                print("  created %s %dth file" % (fName, self.nOutFile), end='')
+                print("  keys=", list(outFile.keys()), end='')
+                print("  shape=", outFile['all_events']['images'].shape)
+
 print("@@@ Start processing...")
+fileOuts = FileSplitOut(shape, nEventOutFile, outPrefix, args, nEventTotal, args.debug)
+
 outFileNames = []
-nEventProcessed = 0
-nEventToGo = nEventOutFile
-out_labels, out_weights, out_image = None, None, None
-for iSrcFile, (nEvent0, srcFileName) in enumerate(zip(nEvent0s, srcFileNames)):
+for nEvent0, srcFileName in zip(nEvent0s, srcFileNames):
     if args.debug: print("Open file", srcFileName)
     ## Open data file
     data = h5py.File(srcFileName, 'r')['all_events']
@@ -86,72 +159,15 @@ for iSrcFile, (nEvent0, srcFileName) in enumerate(zip(nEvent0s, srcFileNames)):
     #image_e /= np.max(image_e)
     #image_t /= np.max(image_t)
 
-    if args.debug and iSrcFile == 0:
-        print("Build multi-channels image...")
-        print("  Input image shape from the 1st file =", image_h.shape, image_e.shape, image_t.shape)
-
-    if args.format == 'NHWC':
-        image_h = np.expand_dims(image_h, -1)
-        image_e = np.expand_dims(image_e, -1)
-        image_t = np.expand_dims(image_t, -1)
-        image = np.concatenate([image_h, image_e, image_t], axis=-1)
-    else: ## for the NCHW
-        image_h = np.expand_dims(image_h, 1)
-        image_e = np.expand_dims(image_e, 1)
-        image_t = np.expand_dims(image_t, 1)
-        image = np.concatenate([image_h, image_e, image_t], axis=1)
-
-    if args.debug and iSrcFile == 0:
-        print("  Output image format=", args.format)
-        print("  Output image shape from the 1st file =", image.shape)
-
     ## Put into the output file
-    begin, end = 0, min(nEventToGo, nEvent0)
-    while begin < nEvent0:
-        ### First check to prepare output array
-        if nEventToGo == nEventOutFile: ## Initializing output file
-            ## Build placeholder for the output
-            out_labels = np.ones(0)
-            out_weights = np.ones(0)
-            out_image = np.ones([0,*image.shape[1:]])
-        ####
-        print(out_image.shape[0], end="\r")
+    fileOuts.addEvents(labels, weights, image_h, image_e, image_t)
 
-        ## Do the processing
-        nEventToGo -= (end-begin)
-        nEventProcessed += (end-begin)
+## save remaining events
+fileOuts.flush()
 
-        out_labels = np.concatenate([out_labels, labels[begin:end]])
-        out_weights = np.concatenate([out_weights, weights[begin:end]])
-        out_image = np.concatenate([out_image, image[begin:end,:,:,:]])
+print("@@@ Finished processing")
+print("    Number of input files   =", len(srcFileNames))
+print("    Number of input events  =", nEventTotal)
+print("    Number of output files  =", fileOuts.nOutFile)
+print("    Number of output events =", fileOuts.nOutEvent)
 
-        begin, end = end, min(nEventToGo, nEvent0)
-
-        if nEventToGo == 0 or nEventProcessed == nEventTotal: ## Flush output and continue
-            nEventToGo = nEventOutFile
-            end = min(begin+nEventToGo, nEvent0)
-
-            iOutFile = len(outFileNames)+1
-            outFileName = outPrefix + (("_%d" % iOutFile) if args.split else "") + ".h5"
-            outFileNames.append(outFileName)
-            if args.debug: print("Writing output file %s..." % outFileName, end='')
-
-            chunkSize = min(args.chunk, out_weights.shape[0])
-            with h5py.File(outFileName, 'w', libver='latest', swmr=True) as outFile:
-                g = outFile.create_group('all_events')
-                g.create_dataset('images', data=out_image, chunks=((chunkSize,)+out_image.shape[1:]), **kwargs)
-                g.create_dataset('labels', data=out_labels, chunks=(chunkSize,), dtype='f4')
-                g.create_dataset('weights', data=out_weights, chunks=(chunkSize,), dtype='f4')
-                if args.debug: print("  done")
-
-            with h5py.File(outFileName, 'r', libver='latest', swmr=True) as outFile:
-                print(("  created %s (%d/%d)" % (outFileName, iOutFile, args.nfiles)), end='')
-                print("  keys=", list(outFile.keys()), end='')
-                print("  shape=", outFile['all_events']['images'].shape)
-
-            continue
-
-if args.debug:
-    for outFileName in outFileNames:
-        f = h5py.File(outFileName, 'r', libver='latest', swmr=True)
-        print(outFileName, f['all_events/images'].shape)
