@@ -6,8 +6,8 @@ import sys
 import uproot
 from glob import glob
 from math import ceil
-import numba
-import numpy, numba, awkward, awkward.numba
+import awkward as ak
+#import numba
 
 if sys.version_info[0] < 3: sys.exit()
 
@@ -28,24 +28,25 @@ args = parser.parse_args()
 
 ###################################################################################################
 
-@numba.njit(nogil=True, fastmath=True, parallel=True)
+#@numba.njit(nogil=True, fastmath=True, parallel=True)
 def selectBaselineCuts(src_fjets_pt, src_fjets_eta, src_fjets_mass,
                        src_jets_pt, src_jets_eta, src_jets_btag):
     nEvent = int(len(src_fjets_pt))
     selEvents = []
 
-    prange = numba.prange
+    #prange = numba.prange
+    prange = range
     for ievt in prange(nEvent):
         selJets = (src_jets_pt[ievt] > 30) & (np.fabs(src_jets_eta[ievt]) < 2.4)
-        if selJets.sum() < 4: continue ## require nJets >= 4
-        ht = (src_jets_pt[ievt][selJets]).sum()
+        if ak.sum(selJets) < 4: continue ## require nJets >= 4
+        ht = ak.sum(src_jets_pt[ievt][selJets])
         if ht < 1500: continue ## require HT >= 1500
 
         selBJets = (src_jets_btag[ievt][selJets] > 0.5)
-        if selBJets.sum() < 1: continue ## require nBJets >= 1
+        if ak.sum(selBJets) < 1: continue ## require nBJets >= 1
 
         selFjets = (src_fjets_pt[ievt] > 30)
-        sumFjetsMass = (src_fjets_mass[ievt][selFjets]).sum()
+        sumFjetsMass = ak.sum(src_fjets_mass[ievt][selFjets])
         if sumFjetsMass < 500: continue ## require sum(FatJetMass) >= 500
 
         selEvents.append(ievt)
@@ -54,15 +55,15 @@ def selectBaselineCuts(src_fjets_pt, src_fjets_eta, src_fjets_mass,
 
 ###################################################################################################
 
-#@numba.njit(nogil=True, fastmath=True, parallel=True)
 ## note: numba does not support np.histogram2d. sad...
+#@numba.njit(nogil=True, fastmath=True, parallel=True)
 def getImage(pts, etas, phis, bins):
     xlim = [-2.5, 2.5]
     ylim = [-3.141593, 3.141593]
 
     hs = []
     for i in range(len(etas)):
-        h = np.histogram2d(etas[i], phis[i], weights=pts[i], bins=bins, range=[xlim, ylim])
+        h = np.histogram2d(ak.to_numpy(etas[i]), ak.to_numpy(phis[i]), weights=ak.to_numpy(pts[i]), bins=bins, range=[xlim, ylim])
         hs.append(h[0])
 
     return np.stack(hs)
@@ -182,7 +183,7 @@ for x in args.input:
             print("-"*40)
 
         srcFileNames.append(fName)
-        nEvent0 = len(tree)
+        nEvent0 = tree.num_entries
         nEvent0s.append(nEvent0)
         nEventTotal += nEvent0
 nEventOutFile = min(nEventTotal, args.nevent) if args.nevent >= 0 else nEventTotal
