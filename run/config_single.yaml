@@ -1,0 +1,16 @@
+## Configuration for the training, evaluation
+samples:
+  - name: Z2tau2pipizeropizeronu
+    label: 1
+    path: ../data/Z2pipizeropizeronu_images/*.h5
+    xsec: 1
+    ngen: 1
+  - name: Z2tau2qqbar
+    label: 0
+    path: ../data/Z2qqbar_images/*.h5
+    xsec: 1
+    ngen: 1
+training:
+    randomSeed1: 123456
+    nDataLoaders: 4
+
