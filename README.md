@@ -8,7 +8,7 @@ These three codes can make image file(.h5) from the root file. `makeDetectorImag
 
 Do
 
-    python makeMyDetectorImage_224.py input <directory of input root file> -o <the name of output h5 file> -n <the number of event in each h5 file>
+    python <the name of python program> input <directory of input root file> -o <the name of output h5 file> -n <the number of event in each h5 file>
 
 , which would produce h5 files. For instance,
 
@@ -43,7 +43,7 @@ You also can find `config_multi.yaml` and `config_single.yaml` files in the `run
 
 Do
 
-    python train_labelByUser_256256_multi.py --batch <the number of batch> --device <device number> --model <the name of model you use> -o <path of output file> -c <path of configuration file> --epoch <the number of epoch>
+    python <the name of python program> --batch <the number of batch> --device <device number> --model <the name of model you use> -o <path of output file> -c <path of configuration file> --epoch <the number of epoch>
 
 , which train CNN and produce output file.
 
