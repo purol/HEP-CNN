@@ -1,12 +1,13 @@
 import uproot
 from glob import glob
 import numpy as np
+import sys
 
 import matplotlib as mpl
 from matplotlib.image import NonUniformImage
 import matplotlib.pyplot as plt
 
-f = uproot.open("20210301_Z2tau2pipipi_CNN_out_224.root")
+f = uproot.open(sys.argv[1])
 tree = f["data"]
 test_array = tree["Energy_S"].array()
 
