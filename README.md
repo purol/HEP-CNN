@@ -43,7 +43,7 @@ You also can find `config_multi.yaml` and `config_single.yaml` files in the `run
 
 Do
 
-    python <the name of python program> --batch <the number of batch> --device <device number> --model <the name of model you use> -o <path of output files> -c <path of configuration file> --epoch <the number of epoch>
+    python <the name of python program> --batch <batch number> --device <device number> --model <the name of model you use> -o <path of output files> -c <path of configuration file> --epoch <the number of epoch>
 
 , which train CNN and produce output file. The name of model can be found in `train_labelByUser` code.
 
@@ -54,3 +54,19 @@ For instance,
 , which would train CNN. It also makes `history_0.csv`, `model.pth`, `resourceByCP_0.csv`, `resourceByTime_0.csv`, `summary.txt`, and `weight_0.pth`.
 
 `history_0.csv` saves loss and accuracy. `model.pth` and `weight_0.pth` saves the trained CNN. `summary.txt` saves a configuration of CNN. 
+
+### Plot the result about testing model
+We need to obtain the performance of trained CNN, using testing model.
+In the `run` directory of the main directory, you can find `eval_torch_single.py` and `eval_torch_multi.py`. `eval_torch_single.py` is used when the number of classes is 2. `eval_torch_multi.py` is used when the number of classes is 3 or larger than 3.
+
+Do
+
+    python <the name of program> --input <path of model.pth and weight_0.pth> -c <path of config file> --batch <batch number> --device <device number>
+
+For instance,
+
+    python eval_torch_multi.py --input ../result/CPlargekernelnorm1_multi_input_again/ -c ./config.yaml --batch 32 --device 0
+
+, which would evaluate the CNN in the `../result/CPlargekernelnorm1_multi_input_again/` using `./config.yaml`.
+
+If you use `eval_torch_single.py`, you can obtain images of CNN response and roc curve:
