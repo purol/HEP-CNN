@@ -51,4 +51,6 @@ For instance,
 
     python train_labelByUser_256256_multi.py --batch 32 --device 1 --model defaultnorm1 -o ../result/ -c ./config_multi.yaml --epoch 50
 
-, which would train CNN. It also makes 
+, which would train CNN. It also makes `history_0.csv`, `model.pth`, `resourceByCP_0.csv`, `resourceByTime_0.csv`, `summary.txt`, and `weight_0.pth`.
+
+`history_0.csv` saves loss and accuracy. `model.pth` and `weight_0.pth` saves the trained CNN. `summary.txt` saves a configuration of CNN. 
