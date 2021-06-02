@@ -55,7 +55,7 @@ For instance,
 
 `history_0.csv` saves loss and accuracy. `model.pth` and `weight_0.pth` saves the trained CNN. `summary.txt` saves a configuration of CNN. 
 
-### Plot the result about testing model
+### Plot the result about testing sample
 We need to obtain the performance of trained CNN, using testing model.
 In the `run` directory of the main directory, you can find `eval_torch_single.py` and `eval_torch_multi.py`. `eval_torch_single.py` is used when the number of classes is 2. `eval_torch_multi.py` is used when the number of classes is 3 or larger than 3.
 
