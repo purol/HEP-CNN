@@ -39,8 +39,14 @@ You also can find `config_multi.yaml` and `config_single.yaml` files in the `run
     training:
         randomSeed1: 123456
         nDataLoaders: 4
-. `path` is the path of the h5 file. I do not care about `xsec` and `ngen`. I just set them to be zero. In this case, weights for each events becomes 1. If you want to change the weight, you need to change `xsec` or `ngen`.
+. `path` is the path of the h5 file. I do not care about `xsec` and `ngen`. I just set them to be one. In this case, weights for each events becomes 1. If you want to change the weight, you need to change `xsec` or `ngen`.
 
 Do
+
+    python train_labelByUser_256256_multi.py --batch <the number of batch> --device <device number> --model <the name of model you use> -o <path of output file> -c <path of configuration file> --epoch <the number of epoch>
+
+, which train CNN and produce output file.
+
+For instance,
 
     python train_labelByUser_256256_multi.py --batch 32 --device 1 --model defaultnorm1 -o ../result/ -c ./config_multi.yaml --epoch 50
