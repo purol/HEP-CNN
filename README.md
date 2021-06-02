@@ -43,10 +43,12 @@ You also can find `config_multi.yaml` and `config_single.yaml` files in the `run
 
 Do
 
-    python <the name of python program> --batch <the number of batch> --device <device number> --model <the name of model you use> -o <path of output file> -c <path of configuration file> --epoch <the number of epoch>
+    python <the name of python program> --batch <the number of batch> --device <device number> --model <the name of model you use> -o <path of output files> -c <path of configuration file> --epoch <the number of epoch>
 
-, which train CNN and produce output file.
+, which train CNN and produce output file. The name of model can be found in `python/HEPCNN` directory of the main directory.
 
 For instance,
 
     python train_labelByUser_256256_multi.py --batch 32 --device 1 --model defaultnorm1 -o ../result/ -c ./config_multi.yaml --epoch 50
+
+, which would train CNN. It also makes 
