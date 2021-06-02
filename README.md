@@ -45,7 +45,7 @@ Do
 
     python <the name of python program> --batch <the number of batch> --device <device number> --model <the name of model you use> -o <path of output files> -c <path of configuration file> --epoch <the number of epoch>
 
-, which train CNN and produce output file. The name of model can be found in `python/HEPCNN` directory of the main directory.
+, which train CNN and produce output file. The name of model can be found in `train_labelByUser` code.
 
 For instance,
 
