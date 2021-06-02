@@ -55,7 +55,7 @@ For instance,
 
 `history_0.csv` saves loss and accuracy. `model.pth` and `weight_0.pth` saves the trained CNN. `summary.txt` saves a configuration of CNN. 
 
-### Plot the result about testing sample
+### Making a plot about testing sample
 We need to obtain the performance of trained CNN, using testing model.
 In the `run` directory of the main directory, you can find `eval_torch_single.py` and `eval_torch_multi.py`. `eval_torch_single.py` is used when the number of classes is 2. `eval_torch_multi.py` is used when the number of classes is 3 or larger than 3.
 
@@ -65,8 +65,60 @@ Do
 
 For instance,
 
-    python eval_torch_multi.py --input ../result/CPlargekernelnorm1_multi_input_again/ -c ./config.yaml --batch 32 --device 0
+    python eval_torch_multi.py --input ../result/CPlargekernelnorm1_multi_input_again/ -c ./config_multi.yaml --batch 32 --device 0
 
-, which would evaluate the CNN in the `../result/CPlargekernelnorm1_multi_input_again/` using `./config.yaml`.
+, which would evaluate a trained CNN in the `../result/CPlargekernelnorm1_multi_input_again/` directory, using `./config_multi.yaml`.
 
 If you use `eval_torch_single.py`, you can obtain images of CNN response and roc curve:
+![Alt text](/img/response.png "response")
+![Alt text](/img/roc.png "roc")
+
+On the other hand, you can obtain a confusion matrix if you use `eval_torch_multi.py`:
+![Alt text](/img/conf.png "conf")
+
+### Making a plot of loss and accuracy
+You can make a plot by using `history_0.csv`. You can find `drawLossCurve.py` in the `run` directory. 
+
+Do
+
+    python drawLossCurve.py <path of history.csv file>
+    
+For instance
+
+    python drawLossCurve.py ../result/defaultnorm1_no_strange_norm_multi/history_0.csv
+
+, which would make a plot about loss and accuracy:
+![Alt text](/img/loss.png "loss")
+
+### Making a plot of h5 file and root file
+You can train CNN and estimate it with above steps. However, you sometimes want to inspect the h5 or root file.
+
+You can find `view_h5.py` in the `script` directory of the main directory. That code makes you to inspect h5 file.
+
+Do
+
+    python view_h5.py <name of h5 file>
+    
+, which would produce png image.
+
+For instance,
+
+    python view_h5.py qqbar_images_0.h5
+    
+would make a visible png file:
+![Alt text](/img/view.png "view")
+
+`show_rootfile_224.py`, `show_rootfile_256.py`, and `show_rootfile_280.py` make png image file, using root file.
+
+`show_rootfile_224.py`, `show_rootfile_256.py`, and `show_rootfile_280.py` is used for 2x224x224, 4x256x256, and 4x280x280 root file, respectively. You can find more information about it from https://github.com/purol/dual-readout.
+
+Do
+
+    python <name of program> <path of root file>
+    
+, which would produce png image.
+
+For instance,
+
+    python show_rootfile_224.py ./20210520_Z2tau2pipipipizero_CNN_out_160.root
+    
