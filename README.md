@@ -74,7 +74,7 @@ If you use `eval_torch_single.py`, you can obtain images of CNN response and roc
 ![Alt text](/img/roc.png "roc")
 
 On the other hand, you can obtain a confusion matrix if you use `eval_torch_multi.py`:
-![Alt text](/img/conf.png "conf")
+![Alt text](/img/conf2.png "conf")
 
 ### Making a plot of loss and accuracy
 You can make a plot by using `history_0.csv`. You can find `drawLossCurve.py` in the `run` directory. 
